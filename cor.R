@@ -43,6 +43,7 @@ body <- dashboardBody(tabItems(tabItem(tabName = "ID",
                                         ,valueBoxOutput("death.rate")
                                         ,valueBoxOutput("recovery.rate")
                                       ),
+                                      tabsetPanel(tabPanel("Peta",
                                       fluidRow(
                                         box(
                                           title = "Peta Sebaran Kasus"
@@ -52,7 +53,18 @@ body <- dashboardBody(tabItems(tabItem(tabName = "ID",
                                           ,collapsible = TRUE 
                                           ,leafletOutput("sebaran", height = "500px")
                                         )
-                                      )),
+                                      )),tabPanel("Daily_chart",
+                                      fluidRow(
+                                        box(
+                                          title="Daily Growth"
+                                          ,status="primary"
+                                          ,solidHeader = TRUE
+                                          ,width = 15
+                                          ,collapsible = TRUE
+                                          ,plotlyOutput("growth_id",height="500px")
+                                        )
+                                      )),tabPanel("Data",
+                                      fluidPage(DTOutput('tbl'))))),
                                tabItem(tabName = "CC",
                                        fluidPage(
                                          titlePanel("Distribution"),
@@ -172,6 +184,7 @@ output$sebaran=renderLeaflet({ map_object %>%
 }
 )
 
+
 kasus_positif=as.numeric(data_prov %>% filter(type=='positif') %>% summarise(jumlah=sum(jumlah)))
 kasus_meninggal=as.numeric(data_prov %>% filter(type=='meninggal') %>% summarise(jumlah=sum(jumlah)))
 kasus_sembuh=as.numeric(data_prov %>% filter(type=='sembuh') %>% summarise(jumlah=sum(jumlah)))
@@ -224,6 +237,15 @@ output$recovery.rate <- renderValueBox({
     ,icon = icon("stats",lib='glyphicon')
     ,color = "green")
 })
+
+data_day=data_time %>%mutate(Days=attributes.Hari_ke,Cases=attributes.Jumlah_Kasus_Baru_per_Hari,Recovered=attributes.Jumlah_Kasus_Sembuh_per_Hari,Death=attributes.Jumlah_Kasus_Meninggal_per_Hari) %>% filter(complete.cases(Cases)) 
+output$growth_id <- renderPlotly({
+  plot_ly(data_day %>% arrange(Days),x=~Days,y=~Cases,type="scatter",name = 'Cases',mode='lines') %>% add_trace(y=~Recovered,name="Recovered",mode='lines') %>% add_trace(y=~Death,name="Death",mode='lines')
+})
+
+data_update=data_day %>% mutate(tanggal=seq(as.Date("2020/3/2"), Sys.Date(), by = "day"),Cumulative_case=attributes.Jumlah_Kasus_Kumulatif)  %>% select(Tanggal=tanggal,Days,Cases,Recovered,Death,Cumulative_case)
+
+output$tbl <- renderDataTable(data_update,server =  TRUE, filter = 'top', escape = FALSE, selection = 'none')
 
 data_confirmed=data_1 %>% gather(Tanggal,confirmed,-c(`Country/Region`,Lat,Long,`Province/State`))
 data_recovered=data_3 %>% gather(Tanggal,confirmed,-c(`Country/Region`,Lat,Long,`Province/State`))
