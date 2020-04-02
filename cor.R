@@ -9,6 +9,7 @@ library(leafpop)
 library(purrr)
 library(tidyr)
 library(plotly)
+library(RCurl)
 
 #dataindo
 
@@ -63,8 +64,9 @@ body <- dashboardBody(tabItems(tabItem(tabName = "ID",
                                           ,collapsible = TRUE
                                           ,plotlyOutput("growth_id",height="500px")
                                         )
-                                      )),tabPanel("Data",
-                                      fluidPage(DTOutput('tbl'))))),
+                                      ))#,tabPanel("Data",
+                                      #fluidPage(DTOutput('tbl')))
+                                      )),
                                tabItem(tabName = "CC",
                                        fluidPage(
                                          titlePanel("Distribution"),
@@ -238,14 +240,17 @@ output$recovery.rate <- renderValueBox({
     ,color = "green")
 })
 
-data_day=data_time %>%mutate(Days=attributes.Hari_ke,Cases=attributes.Jumlah_Kasus_Baru_per_Hari,Recovered=attributes.Jumlah_Kasus_Sembuh_per_Hari,Death=attributes.Jumlah_Kasus_Meninggal_per_Hari) %>% filter(complete.cases(Cases)) 
+data_day=data_time %>% mutate(Days=attributes.Hari_ke,Cases=attributes.Jumlah_Kasus_Baru_per_Hari,Recovered=attributes.Jumlah_Kasus_Sembuh_per_Hari,Death=attributes.Jumlah_Kasus_Meninggal_per_Hari) %>% filter(complete.cases(Cases)) 
+
 output$growth_id <- renderPlotly({
   plot_ly(data_day %>% arrange(Days),x=~Days,y=~Cases,type="scatter",name = 'Cases',mode='lines') %>% add_trace(y=~Recovered,name="Recovered",mode='lines') %>% add_trace(y=~Death,name="Death",mode='lines')
 })
+outputOptions(output, "growth_id", suspendWhenHidden = FALSE)
 
-data_update=data_day %>% mutate(tanggal=seq(as.Date("2020/3/2"), Sys.Date(), by = "day"),Cumulative_case=attributes.Jumlah_Kasus_Kumulatif)  %>% select(Tanggal=tanggal,Days,Cases,Recovered,Death,Cumulative_case)
+l=data_day %>% nrow()
+data_update=data_day %>% mutate(tanggal=seq(as.Date("2020/3/2"), by = "day",length=l),Cumulative_case=attributes.Jumlah_Kasus_Kumulatif)  %>% select(Tanggal=tanggal,Days,Cases,Recovered,Death,Cumulative_case)
 
-output$tbl <- renderDataTable(data_update,server =  TRUE, filter = 'top', escape = FALSE, selection = 'none')
+#output$tbl <- renderDataTable(data_update,server =  TRUE, filter = 'top', escape = FALSE, selection = 'none')
 
 data_confirmed=data_1 %>% gather(Tanggal,confirmed,-c(`Country/Region`,Lat,Long,`Province/State`))
 data_recovered=data_3 %>% gather(Tanggal,confirmed,-c(`Country/Region`,Lat,Long,`Province/State`))
@@ -412,6 +417,7 @@ plot_ly(data_world %>% filter(confirmed>0) %>% arrange(-active) %>% head(20),x=~
 output$o2=renderPlotly({
   plot_ly(data_world %>% filter(confirmed>0) %>% arrange(active) %>% head(20),x=~`Country/Region`,y=~active,type="bar",name = 'active cases')  %>% layout(title="Lowest Current Active Cases",yaxis = list(title = 'Cases'))
 })
+
 
 }
 

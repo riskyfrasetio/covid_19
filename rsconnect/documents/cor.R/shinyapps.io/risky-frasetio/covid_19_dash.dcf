@@ -4,9 +4,9 @@ username:
 account: risky-frasetio
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 2014637
-bundleId: 2953813
+appId: 2040683
+bundleId: 2957324
 url: https://risky-frasetio.shinyapps.io/covid_19_dash/
-when: 1585747038.93675
+when: 1585804702.39079
 asMultiple: FALSE
 asStatic: FALSE
